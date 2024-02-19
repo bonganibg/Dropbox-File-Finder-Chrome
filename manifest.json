@@ -39,6 +39,7 @@
       "js": [
         "scripts/SDKs/Dropbox-sdk.min.js",
         "scripts/SDKs/gsap.min.js",
+        "scripts/views/navigation-popup.view.js",  
         "scripts/content.js",
         "scripts/moreOption.js",
         "scripts/feedbackFields.js",
