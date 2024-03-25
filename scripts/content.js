@@ -18,106 +18,64 @@ let storeToken = "";
 
 
 //! Dropbox credentials
+/* Authenticaiton CODE  */
+/* Authenticaiton CODE  */
+/* Authenticaiton CODE  */
 
-const dropboxClientId = 'gsw6a2m0r2u44lt';
-const clientSecret = 'nwpi7lk0yyp2v44';
+// const dropboxClientId = 'gsw6a2m0r2u44lt';
+// const clientSecret = 'nwpi7lk0yyp2v44';
 
-const redirectHomeUrl = "https://hyperiondev.cogrammar.com/reviewer/dashboard/"; // your redirect URI http://localhost:3000/testRoute/index.html
+// const redirectHomeUrl = "https://hyperiondev.cogrammar.com/reviewer/dashboard/"; // your redirect URI http://localhost:3000/testRoute/index.html
 
-//Get token from local storage
-let accessToken = localStorage.getItem("access_token");
+// //Get token from local storage
+// let accessToken = localStorage.getItem("access_token");
 
-//Stores token right after verification from the dashboard page
-if (accessToken === "null") {
-  //extracts everything after "#" in url
-  hashParams = new URLSearchParams(window.location.hash.substr(1));
-  accessToken = hashParams.get("access_token"); //save token to variable
-  localStorage.setItem("access_token", accessToken);
-}
+// //Stores token right after verification from the dashboard page
+// if (accessToken === "null") {
+//   //extracts everything after "#" in url
+//   hashParams = new URLSearchParams(window.location.hash.substr(1));
+//   accessToken = hashParams.get("access_token"); //save token to variable
+//   localStorage.setItem("access_token", accessToken);
+// }
 
-//DBX object
-let dbx = new Dropbox.Dropbox({
-  clientId: dropboxClientId,
-  clientSecret: clientSecret,
-  accessToken: accessToken,
-});
+// //DBX object
+// let dbx = new Dropbox.Dropbox({
+//   clientId: dropboxClientId,
+//   clientSecret: clientSecret,
+//   accessToken: accessToken,
+// });
 
+/* Authenticaiton CODE ENDS */
+/* Authenticaiton CODE ENDS */
+/* Authenticaiton CODE ENDS */
+
+
+// Checks if the current page is the review page and displays the popup if required
 //Don't check token on review page
 if ( window.location.pathname.includes("generate_review") || 
 window.location.pathname.includes("generate_dfe_review")) {
   createUI();
 }
 
-//! 1 Check token validity
-async function checkToken(dbx) {
-  console.log(`%c Checking token`, "color: #f078c0");
-  console.log("removeSpinner", removeSpinner);
-  // Show loading indicator or disable user interactions
-  // while waiting for the method to complete
-  //loadingIndicator("show");
+/**MIGHT NOT NEED THIS CODE OVER HERE */
 
-  try {
-    await dbx.usersGetCurrentAccount();
-    console.log(`%c Access token is still valid`, "color: #7cb518");
-    alert("Access token is still valid ✔");
-    //window.location.pathname.includes("generate_review") && createUI();
+// // Step 3: Handle redirect from Dropbox auth page
+// if (window.location.pathname === "http://localhost:3000/testRoute/index.html") {
+//   const hashParams = new URLSearchParams(window.location.hash.substr(1));
+//   const accessToken = hashParams.get("access_token");
+//   console.log(`%c Token stored to localStorage`, "color: #a7c957");
+//   // save token to local storage
+//   localStorage.setItem("access_token", accessToken);
 
-    // Hide loading indicator or enable user interactions
-    // loadingIndicator("hide");
-  } catch (error) {
-    console.log("removeSpinner", removeSpinner);
-    if (removeSpinner) {
-      routeList.innerHTML = "Token Expired";
-      removeSpinner = false;
-    }
-    let getToken = confirm(
-      'Tokens only last 4 hour. This token might have expired ❌. Proceeding to "Auth" to get a new one.'
-    );
-    console.log(`%c Access token expired or is invalid`, "color: #f94144");
-    if (getToken) {
-      localStorage.setItem("access_token", null);
-      auth2Flow();
-    }
+//   if (accessToken) {
+//     // Send the access token back to the auth tab
+//     chrome.runtime.sendMessage({ token: accessToken });
+//     // Close this tab
+//     window.close();
+//   }
+// }
 
-    // Hide loading indicator or enable user interactions
-    //loadingIndicator("hide");
-  }
-}
-
-//! Step 1.1: If needed, get access
-function auth2Flow() {
-  console.log(`%c Auth2Flow`, "color: red");
-  // Remove the token from the URL
-  //replaceState() method modifies the browser's history object
-  history.replaceState({}, document.title, window.location.href.split("#")[0]);
-
-  // Redirect the user to the authorization URL
-  const authUrl =
-    "https://www.dropbox.com/oauth2/authorize" +
-    "?response_type=token" +
-    "&client_id=" +
-    dropboxClientId +
-    "&redirect_uri=" +
-    encodeURIComponent(redirectHomeUrl);
-  window.location.href = authUrl;
-}
-
-// Step 3: Handle redirect from Dropbox auth page
-if (window.location.pathname === "http://localhost:3000/testRoute/index.html") {
-  const hashParams = new URLSearchParams(window.location.hash.substr(1));
-  const accessToken = hashParams.get("access_token");
-  console.log(`%c Token stored to localStorage`, "color: #a7c957");
-  // save token to local storage
-  localStorage.setItem("access_token", accessToken);
-
-  if (accessToken) {
-    // Send the access token back to the auth tab
-    chrome.runtime.sendMessage({ token: accessToken });
-    // Close this tab
-    window.close();
-  }
-}
-
+// Creates the left side pop up
 //! Step 2:  Create Floating UI popup
 function createUI() {
   console.log(`%c Creating UI`, "color: red");
