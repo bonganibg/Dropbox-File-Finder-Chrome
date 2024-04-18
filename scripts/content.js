@@ -42,11 +42,54 @@ let dbx = new Dropbox.Dropbox({
   accessToken: accessToken,
 });
 
+// ----------------------------------------------------------------------------------------
+// ----------------------------SET UP BUTTON STUFF ----------------------------------------
+// ----------------------------------------------------------------------------------------
+
 //Don't check token on review page
+let startTimer;
 if ( window.location.pathname.includes("generate_review") || 
 window.location.pathname.includes("generate_dfe_review")) {
   createUI();
+
+  // Start Review Timer
+  loadTimer();
+  startTimer = setInterval(() => reviewTimer(), 1000);
 }
+
+//Reset timer
+timeResetIcon.addEventListener("click", async () => {
+  console.log(`%c timer reset`, 'color: #ffba08')
+  clearInterval(startTimer);
+
+  counter = 0;
+  min = 0;
+  localStorage.setItem("minutes", null);
+  localStorage.setItem("counter", null);
+  combinedTime = 0;
+
+
+  startTimer = setInterval(() => reviewTimer(), 1000);
+  await loadTimer();
+
+});
+
+//===================================================== review count
+
+// Increment review count when review is finished and save to local storage
+reviewCompleteBtn?.addEventListener("click", () => {
+  reviewCount++;
+  localStorage.setItem("reviewCount", reviewCount);
+
+  counterEl.style.color = "#8BC34A";
+  counterEl.style.animationDuration = "3s";
+
+
+});
+
+// ----------------------------------------------------------------------------------------
+// ----------------------------SET UP BUTTON STUFF ----------------------------------------
+// ----------------------------------------------------------------------------------------
 
 //! 1 Check token validity
 async function checkToken(dbx) {
@@ -100,22 +143,6 @@ function auth2Flow() {
     "&redirect_uri=" +
     encodeURIComponent(redirectHomeUrl);
   window.location.href = authUrl;
-}
-
-// Step 3: Handle redirect from Dropbox auth page
-if (window.location.pathname === "http://localhost:3000/testRoute/index.html") {
-  const hashParams = new URLSearchParams(window.location.hash.substr(1));
-  const accessToken = hashParams.get("access_token");
-  console.log(`%c Token stored to localStorage`, "color: #a7c957");
-  // save token to local storage
-  localStorage.setItem("access_token", accessToken);
-
-  if (accessToken) {
-    // Send the access token back to the auth tab
-    chrome.runtime.sendMessage({ token: accessToken });
-    // Close this tab
-    window.close();
-  }
 }
 
 //! Step 2:  Create Floating UI popup
@@ -530,16 +557,6 @@ function highlightTaskName(taskName) {
 }
 
 //====================================================Review Timer
-//start the time on review
-let startTimer;
-if (
-  window.location.pathname.includes("generate_review") ||
-  window.location.pathname.includes("generate_dfe_review")
-) {
-  loadTimer();
-  startTimer = setInterval(() => reviewTimer(), 1000);
-}
-
 async function loadTimer() {
   /*
 
@@ -672,42 +689,12 @@ function reviewTimer() {
   saveTimeValues();
 }
 
-//Reset timer
-timeResetIcon.addEventListener("click", async () => {
-  console.log(`%c timer reset`, 'color: #ffba08')
-  clearInterval(startTimer);
-
-  counter = 0;
-  min = 0;
-  localStorage.setItem("minutes", null);
-  localStorage.setItem("counter", null);
-  combinedTime = 0;
-
-
-  startTimer = setInterval(() => reviewTimer(), 1000);
-  await loadTimer();
-
-});
-
 // Save the current counter and time to local storage
 function saveTimeValues() {
   localStorage.setItem("counter", counter);
   localStorage.setItem("minutes", min);
   localStorage.setItem("lastSavedTime", new Date().getTime());
 }
-
-//===================================================== review count
-
-// Increment review count when review is finished and save to local storage
-reviewCompleteBtn?.addEventListener("click", () => {
-  reviewCount++;
-  localStorage.setItem("reviewCount", reviewCount);
-
-  counterEl.style.color = "#8BC34A";
-  counterEl.style.animationDuration = "3s";
-
-
-});
 
 // Get review count from local storage and display it
 function getReviewCounts() {

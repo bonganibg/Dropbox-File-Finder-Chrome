@@ -1,0 +1,17 @@
+{
+  "name": "dropbox-file-finder-chrome",
+  "version": "1.0.0",
+  "description": "This app will find a student's task folder automatically and also allow you to download the task folder or open it in Dropbox with one click.",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
