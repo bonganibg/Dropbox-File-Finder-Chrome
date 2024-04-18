@@ -1,84 +1,48 @@
-import { AuthenticaionService } from "./services/auth.service";
-
-let shared = {
-    counter: undefined,
-    min: undefined,
-    lastSavedTime: undefined,
-    foundTaskName: undefined,
-    StudentName:  "",
-    sharedStudentNum:  "",
-    routeList: undefined,
-    reviewCount:  0,
-    inc :  0,
-    combinedTime:  0,
-    removeSpinner :  false,
-    hashParams:  null,
-    rootPath:  "",
-    fileName:  "",
-    foundFiles:  false,
-    storeToken : "" 
-
+const shared = {
+  counter: undefined,
+  min: undefined,
+  lastSavedTime: undefined,
+  foundTaskName: undefined,
+  StudentName:  "",
+  sharedStudentNum:  "",
+  routeList: undefined,
+  reviewCount:  0,
+  inc :  0,
+  combinedTime:  0,
+  removeSpinner :  false,
+  hashParams:  null,
+  rootPath:  "", // not used
+  fileName:  "", // not used
+  foundFiles:  false,
+  storeToken : "" // not used
 }
 
-// Initialize the counter and last saved time from local storage, or use default values
-let counter;
-let min;
-let lastSavedTime;
-let foundTaskName;
-let StudentName = "";
-let sharedStudentNum = "";
-let routeList;
-let reviewCount = 0;
-let inc = 0;
-let combinedTime = 0;
-let removeSpinner = false;
-let hashParams = null;
-let rootPath = "";
-let fileName = "";
-let foundFiles = false;
-let storeToken = "";
 
 
 //! Dropbox credentials
 
+const dropboxClientId = 'gsw6a2m0r2u44lt';
+const clientSecret = 'nwpi7lk0yyp2v44';
 
-// const dropboxClientId = 'gsw6a2m0r2u44lt';
-// const clientSecret = 'nwpi7lk0yyp2v44';
+const redirectHomeUrl = "https://hyperiondev.cogrammar.com/reviewer/dashboard/"; // your redirect URI http://localhost:3000/testRoute/index.html
 
-// const redirectHomeUrl = "https://hyperiondev.cogrammar.com/reviewer/dashboard/"; // your redirect URI http://localhost:3000/testRoute/index.html
+//Get token from local storage
+let accessToken = localStorage.getItem("access_token");
 
-// //Get token from local storage
-// let accessToken = localStorage.getItem("access_token");
-
-// //Stores token right after verification from the dashboard page
-// if (accessToken === "null") {
-//   //extracts everything after "#" in url
-//   hashParams = new URLSearchParams(window.location.hash.substr(1));
-//   accessToken = hashParams.get("access_token"); //save token to variable
-//   localStorage.setItem("access_token", accessToken);
-// }
+//Stores token right after verification from the dashboard page
+if (accessToken === "null") {
+  //extracts everything after "#" in url
+  shared.hashParams = new URLSearchParams(window.location.hash.substr(1));
+  accessToken = shared.hashParams.get("access_token"); //save token to variable
+  localStorage.setItem("access_token", accessToken);
+}
 
 //DBX object
-// let dbx = new Dropbox.Dropbox({
-//   clientId: dropboxClientId,
-//   clientSecret: clientSecret,
-//   accessToken: accessToken,
-// });
-
-const authService = new AuthenticaionService('gsw6a2m0r2u44lt', 
-                        'nwpi7lk0yyp2v44', 
-                        "https://hyperiondev.cogrammar.com/reviewer/dashboard/", 
-                        shared);
-
-authService.createDbxConnection();
-  
-let dbx = shared.dbx;
-
-
-
-
-
-//! 1 Check token validity
+let dbx = new Dropbox.Dropbox({
+  clientId: dropboxClientId,
+  clientSecret: clientSecret,
+  accessToken: accessToken,
+});
 
 // ----------------------------------------------------------------------------------------
 // ----------------------------SET UP BUTTON STUFF ----------------------------------------
@@ -100,11 +64,11 @@ timeResetIcon.addEventListener("click", async () => {
   console.log(`%c timer reset`, 'color: #ffba08')
   clearInterval(startTimer);
 
-  counter = 0;
-  min = 0;
+  shared.counter = 0;
+  shared.min = 0;
   localStorage.setItem("minutes", null);
   localStorage.setItem("counter", null);
-  combinedTime = 0;
+  shared.combinedTime = 0;
 
 
   startTimer = setInterval(() => reviewTimer(), 1000);
@@ -116,8 +80,8 @@ timeResetIcon.addEventListener("click", async () => {
 
 // Increment review count when review is finished and save to local storage
 reviewCompleteBtn?.addEventListener("click", () => {
-  reviewCount++;
-  localStorage.setItem("reviewCount", reviewCount);
+  shared.reviewCount++;
+  localStorage.setItem("reviewCount", shared.reviewCount);
 
   counterEl.style.color = "#8BC34A";
   counterEl.style.animationDuration = "3s";
@@ -132,24 +96,18 @@ reviewCompleteBtn?.addEventListener("click", () => {
 //! 1 Check token validity
 async function checkToken(dbx) {
   console.log(`%c Checking token`, "color: #f078c0");
-  console.log("removeSpinner", removeSpinner);
-  // Show loading indicator or disable user interactions
-  // while waiting for the method to complete
-  //loadingIndicator("show");
+  console.log("removeSpinner", shared.removeSpinner);
 
   try {
     await dbx.usersGetCurrentAccount();
     console.log(`%c Access token is still valid`, "color: #7cb518");
     alert("Access token is still valid ✔");
-    //window.location.pathname.includes("generate_review") && createUI();
 
-    // Hide loading indicator or enable user interactions
-    // loadingIndicator("hide");
   } catch (error) {
-    console.log("removeSpinner", removeSpinner);
-    if (removeSpinner) {
-      routeList.innerHTML = "Token Expired";
-      removeSpinner = false;
+    console.log("removeSpinner", shared.removeSpinner);
+    if (shared.removeSpinner) {
+      shared.routeList.innerHTML = "Token Expired";
+      shared.removeSpinner = false;
     }
     let getToken = confirm(
       'Tokens only last 4 hour. This token might have expired ❌. Proceeding to "Auth" to get a new one.'
@@ -159,17 +117,12 @@ async function checkToken(dbx) {
       localStorage.setItem("access_token", null);
       auth2Flow();
     }
-
-    // Hide loading indicator or enable user interactions
-    //loadingIndicator("hide");
   }
 }
 
 //! Step 1.1: If needed, get access
 function auth2Flow() {
   console.log(`%c Auth2Flow`, "color: red");
-  // Remove the token from the URL
-  //replaceState() method modifies the browser's history object
   history.replaceState({}, document.title, window.location.href.split("#")[0]);
 
   // Redirect the user to the authorization URL
@@ -180,6 +133,7 @@ function auth2Flow() {
     dropboxClientId +
     "&redirect_uri=" +
     encodeURIComponent(redirectHomeUrl);
+
   window.location.href = authUrl;
 }
 
@@ -190,9 +144,9 @@ function createUI() {
   let resultsLoaderEl = document.createElement("span");
   resultsLoaderEl.className = "result_loader";
 
-  routeList = document.createElement("div");
-  routeList.className = "DBXFF-query-results";
-  routeList.innerHTML = `<span class="result_loader"></span>`;
+  shared.routeList = document.createElement("div");
+  shared.routeList.className = "DBXFF-query-results";
+  shared.routeList.innerHTML = `<span class="result_loader"></span>`;
   const inputContainer = document.createElement("div");
   inputContainer.className = "DBXFF-main-input-container";
 
@@ -235,7 +189,7 @@ function createUI() {
   reviewDetailsEl.appendChild(taskNameEl);
   inputContainer.appendChild(reviewDetailsEl);
 
-  inputContainer.appendChild(routeList);
+  inputContainer.appendChild(shared.routeList);
   floatingElement.appendChild(inputContainer);
 
   document.body.appendChild(floatingElement);
@@ -249,7 +203,7 @@ function createUI() {
 
 //! Extracts the task name from the page elements
 function extractTaskName(studentNumber) {
-  sharedStudentNum = studentNumber;
+  shared.sharedStudentNum = studentNumber;
   // open dropbox and search for the student number
   lookUpStudentBtn.addEventListener("click", () => {
     let link = `https://www.dropbox.com/search/work?path=%2F&query=${studentNumber}&search_token=mUrM54J2SiALJes%2B%2Boc65k3O8pz4DOlJOX9WlhH8KKI%3D&typeahead_session_id=09702658948404806500012995044766`;
@@ -293,21 +247,21 @@ function extractTaskName(studentNumber) {
 
     // If the text contains "-", extract the text after "-" and check if it contains ":"
     if (index !== 0) {
-      foundTaskName = text?.substring(index)?.trim();
+      shared.foundTaskName = text?.substring(index)?.trim();
 
       // If the result contains ":", extract the text after the last ":" instead
-      if (foundTaskName.includes(":")) {
-        const lastIndex = foundTaskName.lastIndexOf(":") + 1;
-        foundTaskName = foundTaskName?.substring(lastIndex)?.trim();
+      if (shared.foundTaskName.includes(":")) {
+        const lastIndex = shared.foundTaskName.lastIndexOf(":") + 1;
+        shared.foundTaskName = shared.foundTaskName?.substring(lastIndex)?.trim();
       }
     }
 
-    taskNameEl.textContent = foundTaskName;
+    taskNameEl.textContent = shared.foundTaskName;
 
     //remove the loader before getting results
 
-    removeSpinner = true;
-    filesSearch(studentNumber, foundTaskName, taskNum);
+    shared.removeSpinner = true;
+    filesSearch(studentNumber, shared.foundTaskName, taskNum);
   });
 }
 
@@ -334,7 +288,8 @@ function extractStudentName() {
   const h6Element = [...document.querySelectorAll("h6")].filter((task) =>
     task.textContent.includes("Student:")
   );
-  const stName = h6Element[0]?.textContent?.split(":")[1]?.trim();  
+  const stName = h6Element[0]?.textContent?.split(":")[1]?.trim();
+  studentName = stName;
   return stName;
 }
 
@@ -357,11 +312,11 @@ async function filesSearch(studentNumber, taskName) {
 
   console.log('query', query)
 
-  console.log(`%c Searching for files ${inc}`, "color: #5390d9");
+  console.log(`%c Searching for files ${shared.inc}`, "color: #5390d9");
   let root = studentNumber;
-  let retry = inc;
+  let retry = shared.inc;
 
-  const path = inc > 0 ? root + ` (${retry})` : root;
+  const path = shared.inc > 0 ? root + ` (${retry})` : root;
 
   // Call the Dropbox API to search for a file
   await dbx
@@ -374,22 +329,22 @@ async function filesSearch(studentNumber, taskName) {
       },
     })
     .then(function (response) {
-      if (removeSpinner) {
-        routeList.innerHTML = "";
-        removeSpinner = false;
+      if (shared.removeSpinner) {
+        shared.routeList.innerHTML = "";
+        shared.removeSpinner = false;
       }
 
-      console.log(`%c  making request: ${inc}`, "color: orange");
-      inc++; //after 1rst request look for a 2nd folder
+      console.log(`%c  making request: ${shared.inc}`, "color: orange");
+      shared.inc++; //after 1rst request look for a 2nd folder
       let results = response.result.matches;
 
       //if results are 0 and we did 3 searches already? stop
-      if (inc >= 4) {
+      if (shared.inc >= 4) {
         highlightTaskName(query);
 
         return;
       } else {
-        if (!foundFiles) {
+        if (!shared.foundFiles) {
           //foundFiles = true;
           console.log(`%c results found: ${results.length}`, "color: #2196f3");
        
@@ -451,14 +406,14 @@ async function filesSearch(studentNumber, taskName) {
               btnAndListContainer.appendChild(dlIconContainer);
               btnAndListContainer.appendChild(linkIcon);
               btnAndListContainer.appendChild(foundRes);
-              routeList.appendChild(btnAndListContainer);
+              shared.routeList.appendChild(btnAndListContainer);
 
             }
 
           });
 
           //look in 2nd and 3rd folder
-          if (inc >= 4) {
+          if (shared.inc >= 4) {
             return;
           }
           filesSearch(studentNumber, taskName);
@@ -467,9 +422,9 @@ async function filesSearch(studentNumber, taskName) {
     })
     .catch(function (error) {
       console.log(error);
-      if (removeSpinner) {
+      if (shared.removeSpinner) {
 
-        routeList.innerHTML = `
+        shared.routeList.innerHTML = `
         <p>Either the token has expired. A popup will appear. (If not - Refresh Browser)</p>
         <br>
         <p>Or the Task Name could no be found inside student folders</p>
@@ -480,7 +435,7 @@ async function filesSearch(studentNumber, taskName) {
         <br>
         <p>Try looking up the student number in Dropbox</p>
         `;
-        removeSpinner = false;
+        shared.removeSpinner = false;
       }
       console.log(`%c Search ended`, "color: hotpink");
       checkToken(dbx);
@@ -629,13 +584,13 @@ async function loadTimer() {
 
 
   // Initialize the counter and last saved time from local storage, or use default values
-  counter = parseInt(localStorage.getItem("counter")) || 0;
-  min = parseInt(localStorage.getItem("minutes")) || 0;
-  lastSavedTime =
+  shared.counter = parseInt(localStorage.getItem("counter")) || 0;
+  shared.min = parseInt(localStorage.getItem("minutes")) || 0;
+  shared.lastSavedTime =
     parseInt(localStorage.getItem("lastSavedTime")) || new Date().getTime();
 
   // Calculate the elapsed time since the last saved time and add it to the counter
-  counter += Math.floor((new Date().getTime() - lastSavedTime) / 1000);
+  shared.counter += Math.floor((new Date().getTime() - shared.lastSavedTime) / 1000);
 
   // Save the current counter and time to local storage when the program is closed
 
@@ -652,8 +607,8 @@ async function loadTimer() {
   aTags?.forEach((item) => {
     if (item?.textContent.includes(myWord)) {
       item.addEventListener("click", () => {
-        counter = 0;
-        min = 0;
+        shared.counter = 0;
+        shared.min = 0;
         localStorage.setItem("minutes", null);
         localStorage.setItem("counter", null);
         localStorage.setItem("lastSavedTime", null);
@@ -669,39 +624,39 @@ async function loadTimer() {
 }
 
 function reviewTimer() {
-  counter++;
+  shared.counter++;
 
   // Check if the value of 'counter' has exceeded 59 seconds
-  if (counter > 59) {
+  if (shared.counter > 59) {
     // Calculate the number of full minutes that have elapsed
     // and add it to the 'min' variable
     // The Math.floor() method is used to round down to the nearest integer
     // e.g. if 'counter' is 75 seconds, the quotient of counter / 60 is 1.25,
     // but we only want to add 1 full minute to 'min'
-    min += Math.floor(counter / 60);
+    shared.min += Math.floor(shared.counter / 60);
 
     // Calculate the remaining seconds after removing the full minutes
     // and set the value of 'counter' to this value
     // The modulus operator (%) returns the remainder of the division
     // e.g. if 'counter' is 75 seconds, the remainder of counter % 60 is 15,
     // which represents the number of seconds that have elapsed after 1 full minute
-    counter %= 60;
+    shared.counter %= 60;
   }
 
   //set time warning colors
-  if (min < 5) {
+  if (shared.min < 5) {
     counterEl.style.color = "#8BC34A";
     counterEl.style.animationDuration = "10s";
-  } else if (min < 7) {
+  } else if (shared.min < 7) {
     counterEl.style.color = "#ffeb3b";
     counterEl.style.animationDuration = "5s";
-  } else if (min < 11) {
+  } else if (shared.min < 11) {
     counterEl.style.color = "#ff9800";
     counterEl.style.animationDuration = "2s";
-  } else if (min < 13) {
+  } else if (shared.min < 13) {
     counterEl.style.color = "#ff5722";
     counterEl.style.animationDuration = "1s";
-  } else if (min < 15) {
+  } else if (shared.min < 15) {
     counterEl.style.color = "#f44336";
     counterEl.style.animationDuration = ".2s";
   } else {
@@ -710,17 +665,17 @@ function reviewTimer() {
   }
 
   //Combine minutes and seconds into one string
-  combinedTime = `${min > 9 ? "" : 0}${min}:${counter > 9 ? "" : 0}${counter}`;
+  shared.combinedTime = `${shared.min > 9 ? "" : 0}${shared.min}:${shared.counter > 9 ? "" : 0}${shared.counter}`;
 
   //Stop timer at 60 minutes
-  if (min > 60) {
+  if (shared.min > 60) {
     counterEl.style.color = "#f44336";
     counterEl.style.animationDuration = ".2s ";
-    combinedTime = "59:00";
+    shared.combinedTime = "59:00";
     clearInterval(startTimer);
   }
 
-  counterEl.textContent = combinedTime;
+  counterEl.textContent = shared.combinedTime;
 
   // Save the current counter and time to local storage every second
   saveTimeValues();
@@ -728,20 +683,20 @@ function reviewTimer() {
 
 // Save the current counter and time to local storage
 function saveTimeValues() {
-  localStorage.setItem("counter", counter);
-  localStorage.setItem("minutes", min);
+  localStorage.setItem("counter", shared.counter);
+  localStorage.setItem("minutes", shared.min);
   localStorage.setItem("lastSavedTime", new Date().getTime());
 }
 
 // Get review count from local storage and display it
 function getReviewCounts() {
   let prevCounts = localStorage.getItem("reviewCount");
-  reviewCount = prevCounts ? prevCounts : 0;
+  shared.reviewCount = prevCounts ? prevCounts : 0;
   let counterContainerEl = document.createElement("div");
   counterContainerEl.className = "DBXFF-counter-container";
   let reviewCountEl = document.createElement("p");
   reviewCountEl.className = "DBXFF-review-count";
-  reviewCountEl.textContent = `Reviews done: ${reviewCount}`;
+  reviewCountEl.textContent = `Reviews done: ${shared.reviewCount}`;
 
   let reviewReset = document.createElement("img");
   reviewReset.src = chrome.runtime.getURL("images/reset.png");
@@ -752,7 +707,7 @@ function getReviewCounts() {
   reviewReset.addEventListener("click", () => {
     let sure = confirm("Are you sure you want to reset the review count?");
     if (sure) {
-      reviewCount = 0;
+      shared.reviewCount = 0;
       localStorage.setItem("reviewCount", 0);
       reviewCountEl.textContent = `Reviews done: 0`;
     }
