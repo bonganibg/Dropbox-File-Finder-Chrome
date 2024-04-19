@@ -1,3 +1,5 @@
+import { AuthenticaionService } from "./services/auth.service";
+
 const shared = {
   counter: undefined,
   min: undefined,
@@ -10,11 +12,13 @@ const shared = {
   inc :  0,
   combinedTime:  0,
   removeSpinner :  false,
-  hashParams:  null,
+  hashParams:  undefined,
   rootPath:  "", // not used
   fileName:  "", // not used
   foundFiles:  false,
-  storeToken : "" // not used
+  storeToken : "", // not used
+  taskNum: undefined,
+  studentName: undefined
 }
 
 
@@ -23,26 +27,12 @@ const shared = {
 
 const dropboxClientId = 'gsw6a2m0r2u44lt';
 const clientSecret = 'nwpi7lk0yyp2v44';
-
 const redirectHomeUrl = "https://hyperiondev.cogrammar.com/reviewer/dashboard/"; // your redirect URI http://localhost:3000/testRoute/index.html
 
-//Get token from local storage
-let accessToken = localStorage.getItem("access_token");
+let auth = new AuthenticaionService(dropboxClientId, clientSecret, redirectHomeUrl, shared);
+console.log(auth);
 
-//Stores token right after verification from the dashboard page
-if (accessToken === "null") {
-  //extracts everything after "#" in url
-  shared.hashParams = new URLSearchParams(window.location.hash.substr(1));
-  accessToken = shared.hashParams.get("access_token"); //save token to variable
-  localStorage.setItem("access_token", accessToken);
-}
-
-//DBX object
-let dbx = new Dropbox.Dropbox({
-  clientId: dropboxClientId,
-  clientSecret: clientSecret,
-  accessToken: accessToken,
-});
+let dbx  = auth.createDbxConnection();
 
 // ----------------------------------------------------------------------------------------
 // ----------------------------SET UP BUTTON STUFF ----------------------------------------
@@ -228,9 +218,10 @@ function extractTaskName(studentNumber) {
     if (regex.test(item.textContent)) {
 
       // If the search word is found, replace it with a highlighted version
-      taskNum = item.textContent.match(regex)[0].split(" ")[1];
+      shared.taskNum = item.textContent.match(regex)[0].split(" ")[1];
+      console.log(shared.taskNum)
 
-      localStorage.setItem("taskNumber", `Task ${taskNum}`);//save task number to local storage
+      localStorage.setItem("taskNumber", `Task ${shared.taskNum}`);//save task number to local storage
 
 
     }
@@ -261,7 +252,7 @@ function extractTaskName(studentNumber) {
     //remove the loader before getting results
 
     shared.removeSpinner = true;
-    filesSearch(studentNumber, shared.foundTaskName, taskNum);
+    filesSearch(studentNumber, shared.foundTaskName, shared.taskNum);
   });
 }
 
@@ -288,8 +279,7 @@ function extractStudentName() {
   const h6Element = [...document.querySelectorAll("h6")].filter((task) =>
     task.textContent.includes("Student:")
   );
-  const stName = h6Element[0]?.textContent?.split(":")[1]?.trim();
-  studentName = stName;
+  const stName = h6Element[0]?.textContent?.split(":")[1]?.trim();  
   return stName;
 }
 
@@ -352,11 +342,11 @@ async function filesSearch(studentNumber, taskName) {
           //Aldo build the dive that contains the download button and the link to the folder
           results.forEach((item, i) => {
             let taskNumber = item.metadata.metadata.path_display
-            console.log('taskNum', taskNum)
+            console.log('taskNum', shared.taskNum)
             // Only display the results that contain the task number
-            if (taskNumber.includes(taskNum)) {
-              if (taskNum < 10) {
-                taskNum = "T0" + taskNum[taskNum.length - 1];
+            if (taskNumber.includes(shared.taskNum)) {
+              if (shared.taskNum < 10) {
+                shared.taskNum = "T0" + shared.taskNum[shared.taskNum.length - 1];
                
                }
 
@@ -516,7 +506,7 @@ function highlightTaskName(taskName) {
     let wordsToHighlight = taskName.split(" ");
 
     //FInd the task number, and highlight it yellow
-    let numbersToHighlight = taskNum.split(" ");
+    let numbersToHighlight = shared.taskNum.split(" ");
 
     //highlight the task number
     numbersToHighlight.forEach((num) => {
