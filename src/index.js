@@ -21,8 +21,6 @@ const shared = {
   studentName: undefined
 }
 
-
-
 //! Dropbox credentials
 
 const dropboxClientId = 'gsw6a2m0r2u44lt';
@@ -75,57 +73,11 @@ reviewCompleteBtn?.addEventListener("click", () => {
 
   counterEl.style.color = "#8BC34A";
   counterEl.style.animationDuration = "3s";
-
-
 });
 
 // ----------------------------------------------------------------------------------------
 // ----------------------------SET UP BUTTON STUFF ----------------------------------------
 // ----------------------------------------------------------------------------------------
-
-//! 1 Check token validity
-async function checkToken(dbx) {
-  console.log(`%c Checking token`, "color: #f078c0");
-  console.log("removeSpinner", shared.removeSpinner);
-
-  try {
-    await dbx.usersGetCurrentAccount();
-    console.log(`%c Access token is still valid`, "color: #7cb518");
-    alert("Access token is still valid ✔");
-
-  } catch (error) {
-    console.log("removeSpinner", shared.removeSpinner);
-    if (shared.removeSpinner) {
-      shared.routeList.innerHTML = "Token Expired";
-      shared.removeSpinner = false;
-    }
-    let getToken = confirm(
-      'Tokens only last 4 hour. This token might have expired ❌. Proceeding to "Auth" to get a new one.'
-    );
-    console.log(`%c Access token expired or is invalid`, "color: #f94144");
-    if (getToken) {
-      localStorage.setItem("access_token", null);
-      auth2Flow();
-    }
-  }
-}
-
-//! Step 1.1: If needed, get access
-function auth2Flow() {
-  console.log(`%c Auth2Flow`, "color: red");
-  history.replaceState({}, document.title, window.location.href.split("#")[0]);
-
-  // Redirect the user to the authorization URL
-  const authUrl =
-    "https://www.dropbox.com/oauth2/authorize" +
-    "?response_type=token" +
-    "&client_id=" +
-    dropboxClientId +
-    "&redirect_uri=" +
-    encodeURIComponent(redirectHomeUrl);
-
-  window.location.href = authUrl;
-}
 
 //! Step 2:  Create Floating UI popup
 function createUI() {
@@ -410,7 +362,7 @@ async function filesSearch(studentNumber, taskName) {
         }
       }
     })
-    .catch(function (error) {
+    .catch(async function (error) {
       console.log(error);
       if (shared.removeSpinner) {
 
@@ -428,7 +380,7 @@ async function filesSearch(studentNumber, taskName) {
         shared.removeSpinner = false;
       }
       console.log(`%c Search ended`, "color: hotpink");
-      checkToken(dbx);
+      await auth.checkToken(dbx);
 
       return;
     });

@@ -1,5 +1,3 @@
-//! 1 Check token validity
-
 //! BYB tasks files are sometimes written as byb 04 or byb IV. But on the review page it is always written with Roman numerals
 
 //! Download selected Folder or file
@@ -11,8 +9,6 @@
 //! Extract the student number from the page elements
 
 //! Extracts the task name from the page elements
-
-//! Step 1.1: If needed, get access
 
 //! Step 2.1 :  Call function to "Extracts the task name"
 
