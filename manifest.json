@@ -26,20 +26,21 @@
         "https://*.hyperiondev.cogrammar.com/reviewer/student/reviews/*"
       ],
       "css": [
-        "css/style.css",
-        "css/dashboard.css",
-        "css/loaders.css",
-        "css/feedbackFields.css",
-        "css/scoreBoard.css",
-        "css/moreOptions.css",
-        "css/MentorRubrick.css",
-        "css/reviewed-reviews.css",
-        "css/scrollToTop.css"
+        "src/css/style.css",
+        "src/css/dashboard.css",
+        "src/css/loaders.css",
+        "src/css/feedbackFields.css",
+        "src/css/scoreBoard.css",
+        "src/css/moreOptions.css",
+        "src/css/MentorRubrick.css",
+        "src/css/reviewed-reviews.css",
+        "src/css/scrollToTop.css"
       ],
       "js": [
         "scripts/SDKs/Dropbox-sdk.min.js",
         "scripts/SDKs/gsap.min.js",
-        "scripts/content.js",
+        "scripts/views/navigation-popup.view.js",
+        "dist/main.js",
         "scripts/moreOption.js",
         "scripts/feedbackFields.js",
         "scripts/dashboardScripts.js",        
@@ -56,12 +57,12 @@
     "service_worker": "scripts/background.js"
   },
   "action": {
-    "default_popup": "html/popup.html"
+    "default_popup": "src/html/popup.html"
   },
   "icons": {
-    "16": "images/icon16.png",
-    "32": "images/icon32.png",
-    "48": "images/icon48.png",
-    "128": "images/icon128.png"
+    "16": "src/images/icon16.png",
+    "32": "src/images/icon32.png",
+    "48": "src/images/icon48.png",
+    "128": "src/images/icon128.png"
   }
 }
