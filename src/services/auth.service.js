@@ -23,6 +23,7 @@ export class AuthenticaionService
             accessToken: accessToken
         });
         
+        this.dbx = dbx
         return dbx;
     }
 

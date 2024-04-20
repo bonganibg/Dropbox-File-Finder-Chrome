@@ -2,7 +2,7 @@ export class ExtractionService
 {
     constructor(shared)
     {
-        this.shared = shared;``
+        this.shared = shared;
     }
 
     extractStudentNumber(filesSearch) {
