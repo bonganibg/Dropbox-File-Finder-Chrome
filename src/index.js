@@ -11,8 +11,7 @@ const shared = {
   StudentName:  "",
   sharedStudentNum:  "",
   routeList: undefined,
-  reviewCount:  0,
-  inc :  0,
+  reviewCount:  0,  
   combinedTime:  0,
   removeSpinner :  false,
   hashParams:  undefined,
@@ -185,11 +184,11 @@ function createTaskSearchResultComponents(item){
   });
 }
 
-async function getFileSearch(studentNumber, query){  
+async function getFileSearch(studentNumber, query, inc){  
   let root = studentNumber;
-  let retry = shared.inc;
+  let retry = inc;
 
-  const path = shared.inc > 0 ? root + ` (${retry})` : root;
+  const path = inc > 0 ? root + ` (${retry})` : root;
   
   
   try{    
@@ -210,9 +209,9 @@ async function getFileSearch(studentNumber, query){
   return undefined;
 }
 
-async function loadDropboxFiles(studentNumber, taskName){ 
+async function loadDropboxFiles(studentNumber, taskName, inc){ 
   let query = filterBybName(taskName); //update "build your brand" strings  
-  let response = await getFileSearch(studentNumber, query);
+  let response = await getFileSearch(studentNumber, query, inc);
 
   if (response == undefined){
     let content = `
@@ -234,9 +233,9 @@ async function loadDropboxFiles(studentNumber, taskName){
   }
 
   hideSpinner("");
-  shared.inc++;
+  inc++;
 
-  if (shared.inc >= 4){
+  if (inc >= 4){
     highlightTaskName(query)
     return;
   }
@@ -255,10 +254,10 @@ async function loadDropboxFiles(studentNumber, taskName){
     }
   });
 
-  if (shared.inc >= 4)
+  if (inc >= 4)
     return;
 
-  loadDropboxFiles(studentNumber, taskName);    
+  loadDropboxFiles(studentNumber, taskName, inc);    
 }
 
 //Extracts the words that matches the task name and only highlight those words.

@@ -5,7 +5,7 @@ export class ExtractionService
         this.shared = shared;
     }
 
-    extractStudentNumber(filesSearch) {
+    extractStudentNumber(loadDropboxFiles) {
         console.log(`%c Extracting St Number`, "color: red");
         // Select all h6 elements on the page
         const h6Element = [...document.querySelectorAll("h6")].filter((task) =>
@@ -15,7 +15,7 @@ export class ExtractionService
         studentNumberEl.textContent = studentNumber;
       
         // extractTaskName(studentNumber); //! Step 2.1 :  Call function to "Extracts the task name"
-        this.extractTaskName(studentNumber, filesSearch); 
+        this.extractTaskName(studentNumber, loadDropboxFiles); 
         this.extractStudentName();
       }
 
@@ -31,7 +31,7 @@ export class ExtractionService
         return stName;
     }
 
-    extractTaskName(studentNumber, filesSearch) {
+    extractTaskName(studentNumber, loadDropboxFiles) {
         this.shared.sharedStudentNum = studentNumber;
         // open dropbox and search for the student number
         lookUpStudentBtn.addEventListener("click", () => {
@@ -91,7 +91,7 @@ export class ExtractionService
           //remove the loader before getting results
       
           this.shared.removeSpinner = true;
-          filesSearch(studentNumber, this.shared.foundTaskName, this.shared.taskNum);
+          loadDropboxFiles(studentNumber, this.shared.foundTaskName, 0);
         });
       }
 }
