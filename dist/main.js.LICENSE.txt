@@ -1,9 +1,5 @@
-//! BYB tasks files are sometimes written as byb 04 or byb IV. But on the review page it is always written with Roman numerals
-
 //! Download selected Folder or file
 
 //! Step 2.1 : Call function to "Extract the student number"
 
 //! Step 2:  Create Floating UI popup
-
-//! Step 3 Find a specific file by name - Display results
