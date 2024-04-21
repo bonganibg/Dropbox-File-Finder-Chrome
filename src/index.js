@@ -23,28 +23,24 @@ const shared = {
   studentName: undefined
 }
 
+const DROPBOX_CLIENT_ID = 'gsw6a2m0r2u44lt';
+const CLIENT_SECRET = 'nwpi7lk0yyp2v44';
+const REDIRECT_HOME_URL = "https://hyperiondev.cogrammar.com/reviewer/dashboard/"; // your redirect URI http://localhost:3000/testRoute/index.html
+
 const extractionService = new ExtractionService(shared);
 const dropboxService = new DropboxService(shared);
 const reviewTimerService = new ReviewTimerService(shared);
 
-//! Dropbox credentials
+const auth = new AuthenticaionService(DROPBOX_CLIENT_ID, CLIENT_SECRET, REDIRECT_HOME_URL, shared);
+const dbx  = auth.createDbxConnection();
 
-const dropboxClientId = 'gsw6a2m0r2u44lt';
-const clientSecret = 'nwpi7lk0yyp2v44';
-const redirectHomeUrl = "https://hyperiondev.cogrammar.com/reviewer/dashboard/"; // your redirect URI http://localhost:3000/testRoute/index.html
+(() => {
+  reviewTimerService.setUpTimer(createUI)  
+})()
 
-let auth = new AuthenticaionService(dropboxClientId, clientSecret, redirectHomeUrl, shared);
-console.log(auth);
-
-let dbx  = auth.createDbxConnection();
-
-//Don't check token on review page
-reviewTimerService.setUpTimer(createUI)
 
 //! Step 2:  Create Floating UI popup
 function createUI() {
-  console.log(`%c Creating UI`, "color: red");
-  // Create the floating element properties
   let resultsLoaderEl = document.createElement("span");
   resultsLoaderEl.className = "result_loader";
 
@@ -105,19 +101,98 @@ function createUI() {
   getReviewCounts();
 }
 
+/**
+ * Loads all of the students file links for a given task from dropbox
+ * @param {string} studentNumber Student number to be searched
+ * @param {string} taskName Name of the task being search
+ * @param {number} inc Number of times the function has been called
+ * @returns nothing
+ */
+async function loadDropboxFiles(studentNumber, taskName, inc){ 
+  let query = filterBybName(taskName); //update "build your brand" strings  
+  let response = await getFileSearch(studentNumber, query, inc);
+
+  if (inc >= 4){
+    highlightTaskName(query)
+    return;
+  }  
+
+  if (response == undefined){
+    let content = `
+      <p>Either the token has expired. A popup will appear. (If not - Refresh Browser) <br>
+      Or the Task Name could no be found inside student folders<br>
+      Or CoGrammar API is offline<br>
+      Or you have an internet connection issue<br>
+      Try looking up the student number in Dropbox</p>
+      `;
+
+      hideSpinner(content);
+
+      await auth.checkToken(dbx)
+      return;
+  }
+
+  hideSpinner("");
+  inc++;
+
+  response.forEach((item, i) => {
+    let taskNumber = item.metadata.metadata.path_display;
+
+    if (taskNumber.includes(shared.taskNum)){      
+      if (shared.taskNum < 10)
+        shared.taskNum = "T0" + shared.taskNum[shared.taskNum.length - 1];
+
+      createTaskSearchResultComponents(item);
+    }
+  });
+
+  loadDropboxFiles(studentNumber, taskName, inc);    
+}
+
+/**
+ * Highlights the task name in the file search popup
+ * @param {string} taskName The name of the task
+ */
+function highlightTaskName(taskName) {
+  const parentDivs = document.querySelectorAll(".DBXFF-foundRes");
+  parentDivs.forEach((div) => {
+
+    let itemText = div.textContent?.toLowerCase()?.trim();
+    let wordsToHighlight = taskName.split(" ");
+    let numbersToHighlight = shared.taskNum.split(" ");
+
+    numbersToHighlight.forEach((num) => {
+      if (num.length > 0) {
+        if (itemText.includes(num.toLowerCase())) {
+          let found = div.innerHTML.replace(
+            new RegExp(num, "gi"),
+            `<b style="font-weight: 100; color: #FFC107">${num}</b>`
+          );
+          div.innerHTML = found;
+        }
+      }
+    });
+
+    wordsToHighlight.forEach((word) => {
+      if (word.length > 2) {
+        if (itemText.includes(word.toLowerCase())) {
+          let found = div.innerHTML.replace(
+            new RegExp(word, "gi"),
+            `<b class="highlight">${word}</b>`
+          );
+          div.innerHTML = found;
+        }
+      }
+    });
+  });
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if the task name is a BYB task that contains a roman numeral and returns numeric task name.
+ * @param {string} query The name of the task 
+ * @returns Task name   
+ */
 function filterBybName(query){  
   let pattern = /build your brand/i;
 
@@ -128,6 +203,32 @@ function filterBybName(query){
   return query
 }
 
+/**
+ * Replace roman numerals with numbers
+ * @param {string} inputString Value to be updated
+ * @returns 
+ */
+function replaceRomanNumeralsWithNumbers(inputString) {
+  const romanToNumberMap = {
+    I: "01",
+    II: "02",
+    III: "03",
+    IV: "04",
+    V: "05",
+    VI: "06",
+  };
+  const romanNumeralRegex = /\b(I|II|III|IV|V|VI)\b/g;
+
+  return inputString.replace(romanNumeralRegex, (match, romanNumeral) => {
+    return romanToNumberMap[romanNumeral] || match;
+  });
+}
+
+/**
+ * Stops the spinner and displays a different HTML component in place
+ * @param {string} content HTML string with content to be displayed
+ * @returns nothing
+ */
 function hideSpinner(content){
   if (!shared.removeSpinner)
     return
@@ -136,6 +237,10 @@ function hideSpinner(content){
   shared.removeSpinner = false;
 }
 
+/**
+ * Create the task details item in the file search popup
+ * @param {object} item Current dropbox file item that is being checked.
+ */
 function createTaskSearchResultComponents(item){
   let btnAndListContainer = document.createElement("div");
   let foundRes = document.createElement("div");
@@ -168,8 +273,9 @@ function createTaskSearchResultComponents(item){
     let str = item.metadata.metadata.path_display;
     let lastSlashIndex = str.lastIndexOf("/");
     let newStr = str.substring(0, lastSlashIndex);
-    let link = "https://www.dropbox.com/work/HyperionDev%20Reviewers" +
-                newStr.replace(" ", "%20");
+    let link = ["https://www.dropbox.com/work/HyperionDev%20Reviewers", 
+                 newStr.replace(" ", "%20")].join()
+                
 
     window.open(link, "_blank");
   });
@@ -179,11 +285,17 @@ function createTaskSearchResultComponents(item){
     e.stopPropagation(); //prevent the route from being selected
     dlIcon.classList.add("rotate-center");
     dlIcon.src = chrome.runtime.getURL("images/loader.png");
-    //! Download selected Folder or file
     dropboxService.downloadFolder(item.metadata.metadata, dlIcon, dbx); //folder
   });
 }
 
+/**
+ * Searches Dropbox for the students files for a given task.
+ * @param {string} studentNumber Student number for the students being checked
+ * @param {string} query The name of the task being searched
+ * @param {number} inc The number of times the function has been called
+ * @returns File details from Dropbox
+ */
 async function getFileSearch(studentNumber, query, inc){  
   let root = studentNumber;
   let retry = inc;
@@ -207,106 +319,6 @@ async function getFileSearch(studentNumber, query, inc){
   }
   
   return undefined;
-}
-
-async function loadDropboxFiles(studentNumber, taskName, inc){ 
-  let query = filterBybName(taskName); //update "build your brand" strings  
-  let response = await getFileSearch(studentNumber, query, inc);
-
-  if (response == undefined){
-    let content = `
-      <p>Either the token has expired. A popup will appear. (If not - Refresh Browser)</p>
-      <br>
-      <p>Or the Task Name could no be found inside student folders</p>
-      <br>
-      <p>Or CoGrammar API is offline</p>
-      <br>
-      <p>Or you have an internet connection issue</p>
-      <br>
-      <p>Try looking up the student number in Dropbox</p>
-      `;
-
-      hideSpinner(content);
-
-      await auth.checkToken(dbx)
-      return;
-  }
-
-  hideSpinner("");
-  inc++;
-
-  if (inc >= 4){
-    highlightTaskName(query)
-    return;
-  }
-
-  if (shared.foundFiles)
-    return;
-
-  response.forEach((item, i) => {
-    let taskNumber = item.metadata.metadata.path_display;
-
-    if (taskNumber.includes(shared.taskNum)){
-      if (shared.taskNum < 10)
-        shared.taskNum = "T0" + shared.taskNum[shared.taskNum.length - 1];
-
-      createTaskSearchResultComponents(item);
-    }
-  });
-
-  if (inc >= 4)
-    return;
-
-  loadDropboxFiles(studentNumber, taskName, inc);    
-}
-
-//Extracts the words that matches the task name and only highlight those words.
-function highlightTaskName(taskName) {
-
-  // Get all the  elements that contains the entire path name
-  const parentDivs = document.querySelectorAll(".DBXFF-foundRes");
-
-  // Loop through each parent div
-  parentDivs.forEach((div) => {
-
-
-    // Get the text content of the child div
-    let itemText = div.textContent?.toLowerCase()?.trim();
-
-    //split the words into an array
-    let wordsToHighlight = taskName.split(" ");
-
-    //FInd the task number, and highlight it yellow
-    let numbersToHighlight = shared.taskNum.split(" ");
-
-    //highlight the task number
-    numbersToHighlight.forEach((num) => {
-      if (num.length > 0) {
-        if (itemText.includes(num.toLowerCase())) {
-          let found = div.innerHTML.replace(
-            new RegExp(num, "gi"),
-            `<b style="font-weight: 100; color: #FFC107">${num}</b>`
-          );
-          div.innerHTML = found;
-        }
-      }
-    });
-
-
-
-    wordsToHighlight.forEach((word) => {
-      if (word.length > 2) {
-        if (itemText.includes(word.toLowerCase())) {
-          let found = div.innerHTML.replace(
-            new RegExp(word, "gi"),
-            `<b class="highlight">${word}</b>`
-          );
-          div.innerHTML = found;
-        }
-      }
-    });
-  });
-
 }
 
 //====================================================Review Timer
@@ -344,25 +356,3 @@ function getReviewCounts() {
 
 //Build your brand tasks string manipulation
 // Define a function to replace Roman numerals with corresponding numbers
-function replaceRomanNumeralsWithNumbers(inputString) {
-
-  // Define a mapping of Roman numerals to numbers
-  const romanToNumberMap = {
-    I: "01",
-    II: "02",
-    III: "03",
-    IV: "04",
-    V: "05",
-    VI: "06",
-    // Add more Roman numerals and their corresponding numbers as needed
-  };
-  //console.log('romanToNumberMap', romanToNumberMap.I)
-
-  // Define a regular expression to match Roman numerals
-  const romanNumeralRegex = /\b(I|II|III|IV|V|VI)\b/g;
-
-  // Use the replace() method with a callback function to replace Roman numerals with numbers
-  return inputString.replace(romanNumeralRegex, (match, romanNumeral) => {
-    return romanToNumberMap[romanNumeral] || match;
-  });
-}

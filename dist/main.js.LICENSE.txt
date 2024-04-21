@@ -1,5 +1,3 @@
-//! Download selected Folder or file
-
 //! Step 2.1 : Call function to "Extract the student number"
 
 //! Step 2:  Create Floating UI popup
